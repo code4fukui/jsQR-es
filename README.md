@@ -1,32 +1,54 @@
 # jsQR-es
 
-[![Build Status](https://travis-ci.org/cozmo/jsQR.svg?branch=master)](https://travis-ci.org/cozmo/jsQR)
+[
+![npm version](https://badge.fury.io/js/jsqr.svg)
+](https://badge.fury.io/js/jsqr)
+[
+![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)
+](https://opensource.org/licenses/Apache-2.0)
 
-A pure javascript QR code reading library (ES module).
-This library takes in raw images and will locate, extract and parse any QR code found within.
+> 日本語のREADMEはこちらです: [README.ja.md](README.ja.md)
 
-- [Demo](https://code4fukui.github.io/jsQR-es/)
-- [QR maker](https://taisukef.github.io/qrdots/)
+A pure JavaScript QR code reading library. This library takes in raw images and will locate, extract, and parse any QR code found within.
+
+This project provides an ES module-compatible version of the original [jsQR](https://github.com/cozmo/jsQR).
+
+## Demo
+
+- **Live Demo:** [https://code4fukui.github.io/jsQR-es/](https://code4fukui.github.io/jsQR-es/)
+- **QR Code Generator:** [https://taisukef.github.io/qrdots/](https://taisukef.github.io/qrdots/)
+
+## Features
+
+- **Zero Dependencies**: Pure JavaScript, ready to use.
+- **Versatile**: Works in browsers, Node.js, and Web Workers.
+- **Robust**: Reads QR codes that are rotated, skewed, or distorted.
+- **Comprehensive**: Supports all QR code data modes (Numeric, Alphanumeric, Byte, Kanji, ECI).
+- **Lightweight**: Small footprint, ideal for web applications.
 
 ## Installation
 
-## ES modules
+There are three ways to use jsQR-es:
 
-```js
+### 1. ES Module (CDN)
+
+For modern browsers and build tools, you can import the module directly from a CDN.
+
+```javascript
 import { jsQR } from "https://code4fukui.github.io/jsQR-es/jsQR.js";
 
-// ...
-const code = jsQR(imageData.data, imageData.width, imageData.height);
-console.log(code);
+// ... use jsQR
 ```
 
-### NPM
+### 2. NPM
 
-Available [on npm](https://www.npmjs.com/package/jsqr). Can be used in a Node.js program or with a module bundler such as Webpack or Browserify.
+The library is available on npm under the `jsqr` package.
 
-```
+```bash
 npm install jsqr --save
 ```
+
+Then, you can import or require it in your project:
 
 ```javascript
 // ES6 import
@@ -34,83 +56,113 @@ import jsQR from "jsqr";
 
 // CommonJS require
 const jsQR = require("jsqr");
-
-jsQR(...);
 ```
 
-### Browser
-Alternatively for frontend use [`jsQR.js`](./dist/jsQR.js) can be included with a script tag
+### 3. Browser `<script>` Tag
+
+You can include the UMD build directly in your HTML file. Download [`jsQR.js`](https://code4fukui.github.io/jsQR-es/jsQR.js) and include it with a script tag.
 
 ```html
-<script src="jsQR.js"></script>
+<script src="./path/to/jsQR.js"></script>
 <script>
-  jsQR(...);
+  // The jsQR function is available in the global scope
+  const code = jsQR(imageData, width, height);
+  if (code) {
+    console.log("Found QR code", code.data);
+  }
 </script>
 ```
 
-### A note on webcams
-jsQR is designed to be a completely standalone library for scanning QR codes. By design it does not include any platform specific code. This allows it to just as easily scan a frontend webcam stream, a user uploaded image, or be used as part of a backend Node.js process.
+## API Reference
 
-If you want to use jsQR to scan a webcam stream you'll need to extract the [`ImageData`](https://developer.mozilla.org/en-US/docs/Web/API/ImageData) from the video stream. This can then be passed to jsQR. The [jsQR demo](https://cozmo.github.io/jsQR) contains a barebones implementation of webcam scanning that can be used as a starting point and customized for your needs. For more advanced questions you can refer to the [`getUserMedia` docs](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia) or the fairly comprehensive [webRTC sample code](https://github.com/webrtc/samples), both of which are great resources for consuming a webcam stream.
+The library exports a single function, `jsQR`.
 
-## Usage
+### `jsQR(imageData, width, height, options?)`
 
-jsQR exports a method that takes in 3 arguments representing the image data you wish to decode. Additionally can take an options object to further configure scanning behavior.
+-   `imageData` (`Uint8ClampedArray`): An array of RGBA pixel data. This is typically retrieved from a canvas element's `ImageData` object.
+-   `width` (`number`): The width of the image.
+-   `height` (`number`): The height of the image.
+-   `options` (`object`, optional): An object with additional configuration.
+    -   `inversionAttempts` (`string`): Can be `"dontInvert"`, `"onlyInvert"`, `"attemptBoth"` (default), or `"invertFirst"`. Controls how the library handles inverted (e.g., white on black) QR codes.
 
-```javascript
-const code = jsQR(imageData, width, height, options?);
+#### Return Value
 
-if (code) {
-  console.log("Found QR code", code);
+Returns a `QRCode` object if a QR code is found, otherwise `null`.
+
+The `QRCode` object has the following structure:
+
+```typescript
+{
+  // The decoded string data from the QR code.
+  data: string;
+
+  // The raw binary data from the QR code.
+  binaryData: number[];
+
+  // An array of data chunks, providing detailed information about the decoded data segments.
+  chunks: object[];
+
+  // The version of the QR code.
+  version: number;
+
+  // An object describing the location of the QR code in the image.
+  location: {
+    topRightCorner: { x: number, y: number };
+    topLeftCorner: { x: number, y: number };
+    bottomRightCorner: { x: number, y: number };
+    bottomLeftCorner: { x: number, y: number };
+
+    topRightFinderPattern: { x: number, y: number };
+    topLeftFinderPattern: { x: number, y: number };
+    bottomLeftFinderPattern: { x: number, y: number };
+
+    bottomRightAlignmentPattern?: { x: number, y: number };
+  };
 }
 ```
 
-### Arguments
-- `imageData` - An `Uint8ClampedArray` of RGBA pixel values in the form `[r0, g0, b0, a0, r1, g1, b1, a1, ...]`.
-As such the length of this array should be `4 * width * height`.
-This data is in the same form as the [`ImageData`](https://developer.mozilla.org/en-US/docs/Web/API/ImageData) interface, and it's also [commonly](https://www.npmjs.com/package/jpeg-js#decoding-jpegs) [returned](https://github.com/lukeapage/pngjs/blob/master/README.md#property-data) by node modules for reading images.
-- `width` - The width of the image you wish to decode.
-- `height` - The height of the image you wish to decode.
-- `options` (optional) - Additional options.
-  - `inversionAttempts` - (`attemptBoth` (default), `dontInvert`, `onlyInvert`, or `invertFirst`) - Should jsQR attempt to invert the image to find QR codes with white modules on black backgrounds instead of the black modules on white background. This option defaults to `attemptBoth` for backwards compatibility but causes a ~50% performance hit, and will probably be default to `dontInvert` in future versions.
+### Example Usage (Browser)
 
-### Return value
-If a QR is able to be decoded the library will return an object with the following keys.
+Here is a complete example of using `jsQR` to scan a QR code from a `<canvas>` element.
 
-- `binaryData` - `Uint8ClampedArray` - The raw bytes of the QR code.
-- `data` - The string version of the QR code data.
-- `chunks` - The QR chunks.
-- `version` - The QR version.
-- `location` - An object with keys describing key points of the QR code. Each key is a point of the form `{x: number, y: number}`.
-Has points for the following locations.
-  - Corners - `topRightCorner`/`topLeftCorner`/`bottomRightCorner`/`bottomLeftCorner`;
-  - Finder patterns - `topRightFinderPattern`/`topLeftFinderPattern`/`bottomLeftFinderPattern`
-  - May also have a point for the `bottomRightAlignmentPattern` assuming one exists and can be located.
+```html
+<!DOCTYPE html>
+<html>
+<body>
+  <h1>jsQR-es Demo</h1>
+  <canvas id="canvas" style="display: none;"></canvas>
+  <div id="output"></div>
 
-Because the library is written in [typescript](http://www.typescriptlang.org/) you can also view the [type definitions](./dist/index.d.ts) to understand the API.
+  <script type="module">
+    import { jsQR } from "https://code4fukui.github.io/jsQR-es/jsQR.js";
 
-## Contributing
+    const canvas = document.getElementById("canvas");
+    const context = canvas.getContext("2d");
+    const outputDiv = document.getElementById("output");
 
-jsQR is written using [typescript](http://www.typescriptlang.org/).
-You can view the development source in the [`src`](./src) directory.
+    // Example: Load an image and scan it
+    const image = new Image();
+    image.src = "path/to/your/qrcode.png"; // Replace with an image URL
+    image.onload = () => {
+      canvas.width = image.width;
+      canvas.height = image.height;
+      context.drawImage(image, 0, 0, image.width, image.height);
 
-Tests can be run with
+      const imageData = context.getImageData(0, 0, image.width, image.height);
+      const code = jsQR(imageData.data, imageData.width, imageData.height);
 
-```
-npm test
-```
-
-Besides unit tests the test suite contains several hundred images that can be found in the [/tests/end-to-end/](./tests/end-to-end/) folder.
-
-Not all the images can be read. In general changes should hope to increase the number of images that read. However due to the nature of computer vision some changes may cause images that pass to start to fail and visa versa. To update the expected outcomes run `npm run-script generate-test-data`. These outcomes can be evaluated in the context of a PR to determine if a change improves or harms the overall ability of the library to read QR codes. A summary of which are passing
-and failing can be found at [/tests/end-to-end/report.json](./tests/end-to-end/report.json)
-
-After testing any changes, you can compile the production version by running
-```
-npm run-script build
+      if (code) {
+        outputDiv.innerText = `Found QR Code: ${code.data}`;
+        console.log("Full QR code object:", code);
+      } else {
+        outputDiv.innerText = "No QR code found.";
+      }
+    };
+  </script>
+</body>
+</html>
 ```
 
-- Source hosted at [GitHub](https://github.com/cozmo/jsQR)
-- Report issues, questions, feature requests on [GitHub Issues](https://github.com/cozmo/jsQR/issues)
+## License
 
-Pull requests are welcome! Please create seperate branches for seperate features/patches.
+Licensed under the Apache-2.0 license.
